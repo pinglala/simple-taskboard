@@ -1,8 +1,11 @@
 <script lang="ts">
+import Taskboard from "./components/taskboard/taskboard.svelte";
+
 </script>
 
 <main>
 	<h1>Simple Taskboard</h1>
+	<Taskboard></Taskboard>
 </main>
 
 <style>
