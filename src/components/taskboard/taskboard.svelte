@@ -46,6 +46,7 @@
 
     function clear() {
         filteredList = null;
+        filter = '';
     }
 </script>
 <div class={list.length > 0 ? 'form-container' : 'form-container no-filter'}>
@@ -54,7 +55,7 @@
         <button class="add" type="button" on:click={() => addList(name)}>add new list</button>
     </form>
     {#if list.length > 0}
-        <form class="filter" on:submit={() => filterList(filter)}>
+        <form class="filter" on:submit|preventDefault={() => filterList(filter)}>
             <input type="text" placeholder="Filter" bind:value={filter} />
             {#if filteredList}
                 <button class="filter" type="button" on:click={() => clear()}>clear</button>

@@ -85,7 +85,7 @@
     <ul>
         {#each listItem.tasks as task, index}
             <li>
-                <form on:submit={() => editTask(index)}>
+                <form on:submit|preventDefault={() => editTask(index)}>
                     {#if selectedTask === task}
                         <input
                             type="text"
