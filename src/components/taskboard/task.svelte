@@ -1,64 +1,101 @@
 <script lang="ts">
-    import type { ListTask } from "../../shared/models/interface";
+    import type { List } from "../../shared/models/interface";
 
-    export let tasks: ListTask[];
+    export let listItem: List;
+    const asc = "↓";
+    const desc = "↑";
     let name = "";
     let description = "";
     let selectedTask = null;
+    let sortBy = `${asc}${desc}`;
 
-    function add() {
-        reset();
+    function addTask() {
+        resetForm();
         selectedTask = {
-                id: tasks.length + 1,
-                name: '',
-                description: ''
+            id: listItem.tasks.length + 1,
+            name: null,
+            description: null,
         };
 
-        tasks.unshift(selectedTask);
-        tasks = tasks;
+        listItem.tasks.unshift(selectedTask);
+        listItem.tasks = listItem.tasks;
     }
 
-    function remove(id: number) {
-        tasks = tasks.filter((x) => x.id !== id);
+    function removeTask(id: number) {
+        listItem.tasks = listItem.tasks.filter((x) => x.id !== id);
     }
 
-    function edit(index: number) {
+    function editTask(index: number) {
         if (selectedTask) {
             selectedTask = null;
-            tasks[index]  = {
-                    id: tasks[index].id,
-                    name: name,
-                    description: description,
-                }
+            listItem.tasks[index] = {
+                id: listItem.tasks[index].id,
+                name: name ? name : 'Name',
+                description: description ? description : 'Description',
+            };
         } else {
-            selectedTask = tasks[index];
-            name = tasks[index].name;
-            description = tasks[index].description;
+            selectedTask = listItem.tasks[index];
+            name = listItem.tasks[index].name;
+            description = listItem.tasks[index].description;
         }
     }
 
-    function reset() {
+    function cancel(index: number) {   
+        if(!selectedTask.name && !selectedTask.description) {
+            removeTask(index);
+        }
+        else {
+            selectedTask = null;
+        }
+    }
+
+    function sort() {
+        switch (sortBy) {
+            case `${asc}${desc}`:
+            case desc:
+                listItem.tasks.sort(function (a, b) {
+                    return a.name.localeCompare(b.name);
+                });
+                sortBy = asc;
+                break;
+
+            case asc:
+                listItem.tasks.sort(function (a, b) {
+                    return b.name.localeCompare(a.name);
+                });
+                sortBy = desc;
+                break;
+            default:
+                break;
+        }
+        listItem.tasks = listItem.tasks;
+    }
+
+    function resetForm() {
         name = "";
         description = "";
     }
 </script>
 
 <div class="task">
-    <button type="button" on:click={add}>Add task</button>
+    <div class="action-buttons">
+        <button class="sort" type="button" on:click={sort}>sort {sortBy}</button>
+        <button class="add" type="button" on:click={addTask}>add task</button>
+    </div>
     <ul>
-        {#each tasks as task, index}
+        {#each listItem.tasks as task, index}
             <li>
-                <form class="add">
+                <form on:submit={() => editTask(index)}>
                     {#if selectedTask === task}
-                    <input
-                        type="text"
-                        placeholder="Name"
-                        bind:value={name}
-                    />
-                    <textarea
-                        placeholder="Description"
-                        bind:value={description}
-                    />
+                        <input
+                            type="text"
+                            placeholder="Name"
+                            bind:value={name}
+                        />
+                        <textarea
+                            placeholder="Description"
+                            bind:value={description}
+                        />
                     {:else}
                         <span class="title"><b>{task.name}</b></span>
                         <p>{task.description}</p>
@@ -67,11 +104,13 @@
 
                 <div class="action-buttons">
                     {#if selectedTask && selectedTask === task}
-                        <button type="button" on:click={() => (selectedTask = null)}>cancel</button>
+                        <button type="button" on:click={() => cancel(task.id)}>cancel</button>
                     {:else}
-                        <button type="button" on:click={() => remove(task.id)}>remove</button>
+                        <button class="remove" type="button" on:click={() => removeTask(task.id)}>remove</button>
                     {/if}
-                    <button type="button" on:click={() => edit(index)}>{selectedTask && selectedTask === task ? "update" : "edit"}</button>
+                    <button type="button" on:click={() => editTask(index)}>
+                        {selectedTask && selectedTask === task ? ((selectedTask.name && selectedTask.description)? 'update' : "add" ) : "edit"}
+                    </button>
                 </div>
             </li>
         {/each}
@@ -79,11 +118,10 @@
 </div>
 
 <style lang="scss">
-    .add {
+    form {
         display: grid;
     }
     .task {
-
         ul {
             padding: 0;
             list-style-type: none;
@@ -92,19 +130,24 @@
 
                 margin-bottom: 15px;
                 padding: 20px;
-           
+
                 text-align: left;
                 border: 1px solid #595959;
-
+                background-color: #fff;
                 p {
                     max-height: 100px;
                     overflow: auto;
                 }
-
-                .action-buttons {
-                    text-align: right;
-                }
             }
         }
+    }
+
+    .action-buttons {
+        position: relative;
+        text-align: right;
+        .sort {
+                position: absolute;
+                left: 0;
+            }
     }
 </style>

@@ -1,62 +1,13 @@
 <script lang="ts">
-    import type { List } from "../../shared/models/interface";
+    import type { List, ListTask } from "../../shared/models/interface";
     import Task from "./task.svelte";
 
     let name = "";
-    let list: List[] = [
-        {
-            id: 1,
-            name: "Att göra",
-            tasks: [
-                { id: 1, name: "Plantera potatis", description: "I krukor" },
-                {
-                    id: 2,
-                    name: "Kratta löv",
-                    description: "Framsidan av huset",
-                },
-                {
-                    id: 3,
-                    name: "Rensa ogräs",
-                    description: "Framsidan av huset",
-                },
-            ],
-        },
-        {
-            id: 2,
-            name: "Pågående",
-            tasks: [
-                {
-                    id: 1,
-                    name: "Gräva rabatt",
-                    description: "Ny rabatt i framsidan av huset",
-                },
-                {
-                    id: 2,
-                    name: "Slänga skräp",
-                    description: "Saker som ska göras",
-                },
-            ],
-        },
-        {
-            id: 3,
-            name: "Färdig",
-            tasks: [
-                {
-                    id: 1,
-                    name: "Sortera verktyg",
-                    description: "Finns nya verktyg som måste tas hand om",
-                },
-                {
-                    id: 2,
-                    name: "Rensa ogräs",
-                    description: "Baksidan av huset",
-                },
-                { id: 3, name: "Kratta löv", description: "Baksidan av huset" },
-            ],
-        },
-    ];
+    let filter = "";
     let numberOfColumns;
-
+    let filteredList;
+    let list: List[] = [];
+ 
     $: numberOfColumns &&
         numberOfColumns.style.setProperty(
             "--number-of-columns",
@@ -68,34 +19,59 @@
             ...list,
             {
                 id: list.length + 1,
-                name: name,
+                name: name ? name : "New list",
                 tasks: [],
             },
         ];
-        reset();
+        resetForm();
     }
 
     function removeList(id: number) {
         list = list.filter((x) => x.id !== id);
     }
 
-    function reset() {
+    function resetForm() {
         name = "";
     }
-</script>
 
-<form class="add">
-    <input type="text" placeholder="Name" bind:value={name} />
-    <button type="button" on:click={() => addList(name)}>Add new list</button>
-</form>
+    function filterList(filter: string) {
+        filteredList = list;
+        filteredList = filteredList.map((obj: List) => ({
+            ...obj,
+            tasks: obj.tasks.filter((el: ListTask) =>
+                el.name.toLowerCase().includes(filter.toLowerCase())
+            ),
+        }));
+    }
+
+    function clear() {
+        filteredList = null;
+    }
+</script>
+<div class={list.length > 0 ? 'form-container' : 'form-container no-filter'}>
+    <form on:submit|preventDefault={() => addList(name)}>
+        <input type="text" placeholder="Name" bind:value={name} />
+        <button class="add" type="button" on:click={() => addList(name)}>add new list</button>
+    </form>
+    {#if list.length > 0}
+        <form class="filter" on:submit={() => filterList(filter)}>
+            <input type="text" placeholder="Filter" bind:value={filter} />
+            {#if filteredList}
+                <button class="filter" type="button" on:click={() => clear()}>clear</button>
+            {/if}
+            <button class="filter" type="button" on:click={() => filterList(filter)}>filter</button>
+        </form>
+    {/if}
+</div>
+
 <div class="list" bind:this={numberOfColumns}>
-    {#each list as listItem}
+    {#each filteredList ? filteredList : list as listItem}
         <div class="list-item">
             <div class="list-item-header">
-                <div> {listItem.name} </div>
-                <button type="button" on:click={() => removeList(listItem.id)} aria-label="remove list">remove</button>
+                <div>{listItem.name}</div>
+                <button class="remove" type="button" on:click={() => removeList(listItem.id)} aria-label="remove list">remove</button>
             </div>
-            <Task tasks={listItem.tasks} />
+            <Task {listItem} />
         </div>
     {/each}
 </div>
@@ -104,21 +80,37 @@
     :root {
         --number-of-columns: inherit;
     }
-    .add {
+
+    .form-container {
         display: flex;
-        justify-content: center;
+        justify-content: space-between;
         margin: 0 auto 20px auto;
-        input {
-            margin-right: 2rem;
+
+        &.no-filter {
+            justify-content: center !important;
         }
+         form {
+            input {
+                margin-right: 2rem;
+            }
+
+            &.filter {
+                button {
+                    margin-right: 10px;
+                }
+            }
+        } 
     }
+  
     .list {
         display: grid;
         grid-template-columns: repeat(var(--number-of-columns), 1fr);
         gap: 10px;
 
         .list-item {
-            margin: 10px;
+            margin: 10px 0;
+            background: #f0f0f0;
+            padding: 15px;
             .list-item-header {
                 position: relative;
                 margin-bottom: 20px;
@@ -134,16 +126,34 @@
             }
         }
     }
+    :global(.remove) {
+        border: 1px solid #b30000;
+        color: #b30000;
+    }
+    :global(.add) {
+        border: 1px solid #006624;
+        color: #006624;
+    }
 
     @media (max-width: 768px) {
         .list {
-        grid-template-columns: repeat(1, 1fr) !important;
+            grid-template-columns: repeat(1, 1fr) !important;
+        }
+
+        .form-container {
+            display: block;
         }
     }
 
     @media (min-width: 768px) and (max-width: 1024px) {
         .list {
-        grid-template-columns: repeat(2, 1fr) !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+        }
+    }
+
+    @media (min-width: 1024px) and (max-width: 1200px) {
+        .list {
+            grid-template-columns: repeat(3, 1fr) !important;
         }
     }
 </style>
